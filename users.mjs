@@ -1,4 +1,4 @@
-const Users = [
+const users = [
   {
     "username": "test.user@leankit.com",
     "password": "test1234"
@@ -33,4 +33,4 @@ const Users = [
   }
 ];
 
-export default Users;
+export default users;

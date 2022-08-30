@@ -1,44 +1,78 @@
-import reactionRequest from "./reaction-request.mjs";
 import fetch from "node-fetch";
-import Users from "./ReactionUsers.mjs";
-import Cards from "./cards.mjs";
+import users from "./users.mjs";
+import config from "./config.mjs";
 
-const hostname = "https://dev.localkanban.com";
+const host = `https://${ config.host }`;
+const defaultUser = config.defaultUser;
 
-const reactions = [ "1", "2", "3", "4", "5", "6" ];
+// 👍 👎 👏 🔥 🎉️ 💜 😎 💩
+const reactions = [ "1", "2", "3", "4", "5", "6", " 7", "8" ];
+const boardId = config.boardId;
 
+// 🎲🎲🎲
 const chooseRandom = arr => {
-	return arr[ Math.floor( Math.random() * arr.length )];
+	return arr[ Math.floor( Math.random() * arr.length ) ];
 }
 
+// 😴😴😴
+const snooze = ms => new Promise( resolve => setTimeout( resolve, ms ) );
 
-const step = async () => {
-	const card = chooseRandom( Cards );
+// 🪜🪜🪜
+const step = async ( cardIds ) => {
+	const card = chooseRandom( cardIds );
 	const reaction = chooseRandom( reactions );
+	const user = chooseRandom( users ) || defaultUser;
 
-	const user = chooseRandom( Users );
-	const username = user["username"];
-	const password = user["password"];
+	const username = user.username;
+	const password = user.password;
 
-	console.log( `requesting reaction for: ${ username }`)
+	console.log( `requesting reaction for: ${ username }` );
 
-	const response = await fetch( `${ hostname }/io/card/${ card }/reaction`, {
-		method: 'post',
-		body: JSON.stringify({ reaction }),
-		headers: { 
-			"Content-Type": "application/json",
-			'Authorization': 'Basic ' + Buffer.from(`${username}:${password}`, 'binary').toString('base64')
-		}
-	} );
+	let response
+	try {
+		response = await fetch( `${ host }/io/card/${ card }/reaction`, {
+			method: 'post',
+			body: JSON.stringify( { reaction } ),
+			headers: { 
+				"Content-Type": "application/json",
+				'Authorization': 'Basic ' + Buffer.from( `${ username }:${ password }`, 'binary' ).toString( 'base64' )
+			}
+		} );
+	} catch ( err ) {
+		console.log( err );
+	}
 
 	const data = await response.json();
-
 	console.log( "request", data );
 };
 
+// 🃏🃏🃏
+const getBoardCards = async boardId => {
+	const username = defaultUser.username;
+	const password = defaultUser.password;
 
-while (true) {
-	await step()
-	const req_delay = Math.random() * 1000;
-	setTimeout( () => {}, req_delay );
+	const response = await fetch( `${ host }/io/cardface?board=${ boardId }&limit=500`, {
+		method: 'get',
+		headers: { 
+			"Content-Type": "application/json",
+			'Authorization': 'Basic ' + Buffer.from( `${ username }:${ password }`, 'binary' ).toString( 'base64' )
+		}
+	});
+
+	const data = await response.json();
+	return data.cards.map( c => c.id );
 }
+
+// ✨ 🤠 ✨ 🤠 ✨ 🤠
+const emojiBlaster = async () => {
+	const boardCardIds = await getBoardCards(  boardId );
+
+	while ( true ) {
+		await step( boardCardIds );
+		const req_delay = 100 + Math.random() * 250;
+		await snooze( req_delay );
+	}
+}
+
+// 🎊 🤩 🙌
+await emojiBlaster();
